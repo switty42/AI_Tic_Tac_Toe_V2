@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Tic-Tac-Toe Battle</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            color: #f85149;
+            padding: 24px 0 16px;
+            letter-spacing: 1px;
+        }
+
+        /* ── Setup Panel ── */
+        #setup-panel {
+            max-width: 1020px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #388bfd;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        .temp-val {
+            font-size: 13px;
+            color: #388bfd;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .form-section {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .form-section h2 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b949e;
+            margin-bottom: 14px;
+        }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group:last-child { margin-bottom: 0; }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: #e6edf3;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 9px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus { border-color: #388bfd; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: opacity 0.2s, background 0.2s;
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:hover:not(:disabled) { opacity: 0.85; }
+
+        .btn-primary { background: #238636; color: #fff; }
+        .btn-danger  { background: #da3633; color: #fff; }
+        .btn-neutral { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
+        .btn-blue    { background: #388bfd; color: #fff; }
+
+        .btn-full { width: 100%; }
+
+        #load-models-btn { margin-top: 8px; }
+        #models-status { font-size: 12px; color: #8b949e; margin-top: 6px; min-height: 16px; }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .checkbox-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #238636;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .checkbox-row span {
+            font-size: 13px;
+            color: #e6edf3;
+        }
+        .free-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            background: #0f2d1a;
+            border: 1px solid #238636;
+            border-radius: 10px;
+            font-size: 10px;
+            color: #3fb950;
+            font-weight: 600;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        /* ── Game Panel ── */
+        #game-panel { display: none; max-width: 1180px; margin: 0 auto; padding: 0 16px 40px; }
+
+        /* Stats bar */
+        #stats-bar {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .stat-val-sm {
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .stat-lbl {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #8b949e;
+            margin-top: 3px;
+        }
+
+        .sv-game   { color: #388bfd; }
+        .sv-x      { color: #f85149; }
+        .sv-o      { color: #3fb950; }
+        .sv-draw   { color: #bc8cff; }
+        .sv-apierr { color: #f85149; }
+        .sv-fmterr { color: #d29922; }
+
+        /* Progress */
+        .progress-wrap {
+            background: #21262d;
+            border-radius: 4px;
+            height: 6px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #388bfd, #bc8cff);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        /* Main layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        /* Board area */
+        #board-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .board-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .board-title h3 { font-size: 14px; color: #8b949e; }
+
+        #current-status {
+            font-size: 13px;
+            color: #e6edf3;
+            font-weight: 600;
+        }
+
+        /* Model name pills */
+        .model-pills {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .model-pill {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            word-break: break-all;
+            line-height: 1.3;
+        }
+
+        .pill-x { background: #2d1215; border: 1px solid #da3633; color: #f85149; }
+        .pill-o { background: #0f2d1a; border: 1px solid #238636; color: #3fb950; }
+
+        /* Tic-tac-toe board */
+        .ttt-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: #0d1117;
+            border: 2px solid #30363d;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.4rem;
+            font-weight: 900;
+            cursor: default;
+            transition: background 0.3s, border-color 0.3s;
+            user-select: none;
+        }
+
+        .cell-x { color: #f85149; border-color: #da3633; background: #2d1215; }
+        .cell-o { color: #3fb950; border-color: #238636; background: #0f2d1a; }
+        .cell-empty { color: #30363d; font-size: 1rem; }
+        .cell-win { background: #2d2000 !important; border-color: #d29922 !important; }
+
+        /* Turn badges */
+        .turn-badges {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 14px;
+        }
+
+        .turn-badge {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .turn-badge.active { opacity: 1; }
+        .badge-x { background: #2d1215; color: #f85149; border: 1px solid #da3633; }
+        .badge-o { background: #0f2d1a; color: #3fb950; border: 1px solid #238636; }
+
+        /* Thinking dots */
+        .thinking {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #8b949e;
+            min-height: 18px;
+        }
+
+        .dot {
+            display: inline-block;
+            animation: blink 1.2s infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 1; }
+        }
+
+        /* Controls */
+        #controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        /* Log panel */
+        #log-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 560px;
+        }
+
+        #log-card h3 {
+            font-size: 14px;
+            color: #8b949e;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        #log-container {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 11.5px;
+            line-height: 1.6;
+        }
+
+        #log-container::-webkit-scrollbar { width: 6px; }
+        #log-container::-webkit-scrollbar-track { background: #161b22; }
+        #log-container::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+        .le {
+            padding: 3px 4px;
+            border-bottom: 1px solid #21262d;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        .le-ts { color: #8b949e; margin-right: 6px; }
+        .le-sys    { color: #388bfd; }
+        .le-move   { color: #3fb950; font-weight: 600; }
+        .le-prompt { color: #bc8cff; }
+        .le-resp   { color: #e6edf3; }
+        .le-start {
+            color: #bc8cff;
+            font-weight: 700;
+            margin-top: 14px;
+            border-top: 1px solid #30363d;
+            padding-top: 6px;
+        }
+        .le-end   { color: #d29922; font-weight: 700; padding-bottom: 6px; }
+        .le-err   { color: #f85149; font-weight: 600; }
+        .le-fmterr{ color: #d29922; }
+
+        /* Final summary */
+        #final-summary {
+            display: none;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        #final-summary h2 { color: #d29922; margin-bottom: 12px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .sum-cell { padding: 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; }
+        .sum-cell .val { font-size: 2rem; font-weight: 700; }
+        .sum-cell .lbl { font-size: 12px; color: #8b949e; margin-top: 4px; }
+
+        @media (max-width: 800px) {
+            .setup-grid  { grid-template-columns: 1fr; }
+            .main-grid   { grid-template-columns: 1fr; }
+            #log-card    { height: 350px; }
+            #stats-bar   { grid-template-columns: repeat(5, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ SETUP ═══════════════════════════════════ -->
+<div id="setup-panel">
+    <h1>LLM Tic-Tac-Toe Battle</h1>
+
+    <div class="setup-grid">
+
+        <!-- Left column: connection + tournament settings -->
+        <div>
+            <div class="form-section">
+                <h2>OpenRouter Connection</h2>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" id="api-key" placeholder="sk-or-...">
+                </div>
+                <button class="btn btn-blue btn-full" id="load-models-btn" onclick="loadModels()">
+                    Load Available Models
+                </button>
+                <div id="models-status"></div>
+            </div>
+
+            <div class="form-section">
+                <h2>Tournament Settings</h2>
+                <div class="form-group">
+                    <label>Number of Games</label>
+                    <input type="number" id="num-games" value="5" min="1" max="200">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Max API Errors</label>
+                        <input type="number" id="max-api-errors" value="10" min="1" max="200">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Format Errors</label>
+                        <input type="number" id="max-format-errors" value="10" min="1" max="200">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Temperature <span class="temp-val" id="temp-display">1.00</span></label>
+                    <input type="range" id="temperature" min="0" max="1" step="0.05" value="1"
+                           oninput="document.getElementById('temp-display').textContent = parseFloat(this.value).toFixed(2)">
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column: players -->
+        <div>
+            <div class="form-section">
+                <h2>Players</h2>
+                <div class="form-group">
+                    <label>Player X — Model</label>
+                    <label class="checkbox-row" style="margin-bottom:6px;margin-top:4px;">
+                        <input type="checkbox" id="perfect-x" onchange="togglePerfectPlayer('x')">
+                        <span>Perfect Player (Algorithm)</span>
+                    </label>
+                    <div id="model-section-x">
+                        <label class="checkbox-row" style="margin-bottom:6px;margin-top:4px;">
+                            <input type="checkbox" id="free-only-x" onchange="populateSelectX()">
+                            <span>Free models only <span class="free-badge">FREE</span></span>
+                        </label>
+                        <input type="text" id="search-x" placeholder="Search models…" oninput="populateSelectX()" style="margin-bottom:6px;">
+                        <select id="model-x"><option value="">-- Load models first --</option></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Player O — Model</label>
+                    <label class="checkbox-row" style="margin-bottom:6px;margin-top:4px;">
+                        <input type="checkbox" id="perfect-o" onchange="togglePerfectPlayer('o')">
+                        <span>Perfect Player (Algorithm)</span>
+                    </label>
+                    <div id="model-section-o">
+                        <label class="checkbox-row" style="margin-bottom:6px;margin-top:4px;">
+                            <input type="checkbox" id="free-only-o" onchange="populateSelectO()">
+                            <span>Free models only <span class="free-badge">FREE</span></span>
+                        </label>
+                        <input type="text" id="search-o" placeholder="Search models…" oninput="populateSelectO()" style="margin-bottom:6px;">
+                        <select id="model-o"><option value="">-- Load models first --</option></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="startTournament()" id="start-btn"
+            style="padding:14px; font-size:16px;">
+        Start Tournament
+    </button>
+</div>
+
+<!-- ═══════════════════════════════════ GAME ════════════════════════════════════ -->
+<div id="game-panel">
+    <h1>LLM Tic-Tac-Toe Battle</h1>
+
+    <!-- Stats bar -->
+    <div id="stats-bar">
+        <div class="stat-card">
+            <div class="stat-val sv-game" id="sv-game">0/0</div>
+            <div class="stat-lbl">Game</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val sv-x" id="sv-xwins">0</div>
+            <div class="stat-lbl">X Wins</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val sv-o" id="sv-owins">0</div>
+            <div class="stat-lbl">O Wins</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val sv-draw" id="sv-draws">0</div>
+            <div class="stat-lbl">Draws</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val sv-apierr" id="sv-apierr">0</div>
+            <div class="stat-lbl">API Errors</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val sv-fmterr" id="sv-fmtx">0</div>
+            <div class="stat-lbl">X Fmt Errors</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val sv-fmterr" id="sv-fmto">0</div>
+            <div class="stat-lbl">O Fmt Errors</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val-sm sv-x" id="sv-costx">$0.00</div>
+            <div class="stat-lbl">X Cost</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val-sm sv-o" id="sv-costo">$0.00</div>
+            <div class="stat-lbl">O Cost</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" style="color:#bc8cff" id="sv-unique">0</div>
+            <div class="stat-lbl">Unique Games</div>
+        </div>
+    </div>
+
+    <div class="progress-wrap">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
+
+    <div class="main-grid">
+
+        <!-- Board -->
+        <div id="board-card">
+            <div class="board-title">
+                <h3>Board</h3>
+                <div id="current-status">Ready</div>
+            </div>
+            <div class="model-pills">
+                <div class="model-pill pill-x" id="pill-x">X: —</div>
+                <div class="model-pill pill-o" id="pill-o">O: —</div>
+            </div>
+            <div class="ttt-board" id="board"></div>
+            <div class="turn-badges">
+                <div class="turn-badge badge-x" id="badge-x">X's Turn</div>
+                <div class="turn-badge badge-o" id="badge-o">O's Turn</div>
+            </div>
+            <div class="thinking" id="thinking"></div>
+            <div id="controls">
+                <button class="btn btn-danger" id="stop-btn" onclick="stopTournament()">Stop</button>
+                <button class="btn btn-neutral" id="new-btn" onclick="backToSetup()" style="display:none">
+                    New Tournament
+                </button>
+                <button class="btn btn-blue" id="save-btn" onclick="saveResults()" style="display:none">
+                    Save Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div id="log-card">
+            <h3>Game Log</h3>
+            <div id="log-container"></div>
+        </div>
+
+    </div>
+
+    <!-- Final summary -->
+    <div id="final-summary">
+        <h2>Tournament Complete</h2>
+        <div class="summary-grid">
+            <div class="sum-cell">
+                <div class="val sv-x" id="sum-x">0</div>
+                <div class="lbl">X Wins</div>
+                <div style="font-size:11px;color:#8b949e;margin-top:4px;" id="sum-x-model"></div>
+            </div>
+            <div class="sum-cell">
+                <div class="val sv-draw" id="sum-d">0</div>
+                <div class="lbl">Draws</div>
+            </div>
+            <div class="sum-cell">
+                <div class="val sv-o" id="sum-o">0</div>
+                <div class="lbl">O Wins</div>
+                <div style="font-size:11px;color:#8b949e;margin-top:4px;" id="sum-o-model"></div>
+            </div>
+        </div>
+        <div style="margin-top:16px;">
+            <span style="font-size:1.1rem;color:#bc8cff;font-weight:700;" id="sum-unique">0</span>
+            <span style="font-size:13px;color:#8b949e;margin-left:6px;">unique game sequences</span>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+/* ─────────────────────────── state ─────────────────────────── */
+
+let ts = {};   // tournament state
+
+/* ─────────────────────────── model loading ─────────────────── */
+
+let allModels = [];   // full list from OpenRouter
+
+function isModelFree(m) {
+    // Free if the model ID ends in ":free" OR both prompt and completion pricing are "0"/0
+    if (m.id.endsWith(':free')) return true;
+    const p = m.pricing;
+    if (!p) return false;
+    return (parseFloat(p.prompt) === 0) && (parseFloat(p.completion) === 0);
+}
+
+function filterModels(models, query) {
+    if (!query) return models;
+    const q = query.toLowerCase();
+    return models.filter(m =>
+        m.id.toLowerCase().includes(q) ||
+        (m.name && m.name.toLowerCase().includes(q))
+    );
+}
+
+function populateSelectX() {
+    const freeOnly = document.getElementById('free-only-x').checked;
+    const query = document.getElementById('search-x').value;
+    const models = filterModels(freeOnly ? allModels.filter(isModelFree) : allModels, query);
+    const sx = document.getElementById('model-x');
+    const prev = sx.value;
+    sx.innerHTML = '';
+    if (models.length === 0) { sx.appendChild(new Option('-- No models match --', '')); return; }
+    models.forEach(m => {
+        const tag = isModelFree(m) ? ' [FREE]' : '';
+        sx.appendChild(new Option(m.name ? `${m.name}${tag} (${m.id})` : `${m.id}${tag}`, m.id));
+    });
+    if (prev && models.find(m => m.id === prev)) sx.value = prev;
+}
+
+function populateSelectO() {
+    const freeOnly = document.getElementById('free-only-o').checked;
+    const query = document.getElementById('search-o').value;
+    const models = filterModels(freeOnly ? allModels.filter(isModelFree) : allModels, query);
+    const so = document.getElementById('model-o');
+    const prev = so.value;
+    so.innerHTML = '';
+    if (models.length === 0) { so.appendChild(new Option('-- No models match --', '')); return; }
+    models.forEach(m => {
+        const tag = isModelFree(m) ? ' [FREE]' : '';
+        so.appendChild(new Option(m.name ? `${m.name}${tag} (${m.id})` : `${m.id}${tag}`, m.id));
+    });
+    if (prev && models.find(m => m.id === prev)) { so.value = prev; }
+    else if (models.length > 1) { so.selectedIndex = 1; }
+}
+
+function populateSelects() {
+    populateSelectX();
+    populateSelectO();
+    const freeCount = allModels.filter(isModelFree).length;
+    document.getElementById('models-status').textContent =
+        `✓ ${allModels.length} models loaded (${freeCount} free)`;
+}
+
+async function loadModels() {
+    const key = document.getElementById('api-key').value.trim();
+    if (!key) { alert('Enter your OpenRouter API key first.'); return; }
+
+    const btn = document.getElementById('load-models-btn');
+    const status = document.getElementById('models-status');
+    btn.disabled = true;
+    status.textContent = 'Loading…';
+
+    try {
+        // Validate key against an authenticated endpoint first
+        const keyCheck = await fetch('https://openrouter.ai/api/v1/auth/key', {
+            headers: { 'Authorization': `Bearer ${key}` }
+        });
+        if (keyCheck.status === 401) throw new Error('Invalid API key — check your OpenRouter key and try again.');
+        if (!keyCheck.ok) throw new Error(`Key check failed: HTTP ${keyCheck.status}`);
+
+        const res = await fetch('https://openrouter.ai/api/v1/models', {
+            headers: { 'Authorization': `Bearer ${key}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const json = await res.json();
+        allModels = (json.data || []).sort((a, b) => a.id.localeCompare(b.id));
+        populateSelects();
+    } catch (e) {
+        status.textContent = `Error: ${e.message}`;
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+/* ─────────────────────────── board helpers ──────────────────── */
+
+const WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+];
+
+function checkWinner(board) {
+    for (const line of WIN_LINES) {
+        const [a,b,c] = line;
+        if (board[a] && board[a] === board[b] && board[a] === board[c])
+            return { winner: board[a], line };
+    }
+    return null;
+}
+
+function isDraw(board) { return board.every(c => c !== null); }
+
+function boardText(board) {
+    const d = board.map((c, i) => c ? ` ${c} ` : ` ${i+1} `);
+    return `${d[0]}|${d[1]}|${d[2]}\n---+---+---\n${d[3]}|${d[4]}|${d[5]}\n---+---+---\n${d[6]}|${d[7]}|${d[8]}`;
+}
+
+/* ─────────────────────────── UI helpers ─────────────────────── */
+
+function renderBoard(board, winLine = null) {
+    const el = document.getElementById('board');
+    el.innerHTML = '';
+    board.forEach((cell, i) => {
+        const div = document.createElement('div');
+        div.className = 'cell';
+        if (cell === 'X') {
+            div.classList.add('cell-x');
+            div.textContent = 'X';
+        } else if (cell === 'O') {
+            div.classList.add('cell-o');
+            div.textContent = 'O';
+        } else {
+            div.classList.add('cell-empty');
+            div.textContent = i + 1;
+        }
+        if (winLine && winLine.includes(i)) div.classList.add('cell-win');
+        el.appendChild(div);
+    });
+}
+
+function setStatus(txt) {
+    document.getElementById('current-status').textContent = txt;
+}
+
+function setActiveBadge(player) {
+    document.getElementById('badge-x').classList.toggle('active', player === 'X');
+    document.getElementById('badge-o').classList.toggle('active', player === 'O');
+}
+
+function setThinking(txt) {
+    const el = document.getElementById('thinking');
+    if (txt) {
+        el.innerHTML = `${escHtml(txt)} <span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>`;
+    } else {
+        el.innerHTML = '';
+    }
+}
+
+function formatCost(c) {
+    if (c === 0) return '$0.00';
+    if (c >= 1)    return '$' + c.toFixed(2);
+    if (c >= 0.01) return '$' + c.toFixed(4);
+    return '$' + c.toFixed(6);
+}
+
+function refreshStats() {
+    const s = ts;
+    document.getElementById('sv-game').textContent     = `${s.gameNum}/${s.totalGames}`;
+    document.getElementById('sv-xwins').textContent    = s.wins.X;
+    document.getElementById('sv-owins').textContent    = s.wins.O;
+    document.getElementById('sv-draws').textContent    = s.wins.draw;
+    document.getElementById('sv-apierr').textContent   = s.apiErrors;
+    document.getElementById('sv-fmtx').textContent     = s.fmtErrors.X;
+    document.getElementById('sv-fmto').textContent     = s.fmtErrors.O;
+    document.getElementById('sv-costx').textContent    = formatCost(s.cost.X);
+    document.getElementById('sv-costo').textContent    = formatCost(s.cost.O);
+    document.getElementById('sv-unique').textContent   = s.uniqueGames ? s.uniqueGames.size : 0;
+    const pct = s.totalGames > 0 ? (s.gameNum / s.totalGames) * 100 : 0;
+    document.getElementById('progress-fill').style.width = `${pct}%`;
+}
+
+function addLog(msg, cls = 'le-resp') {
+    const wrap = document.getElementById('log-container');
+    const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const div = document.createElement('div');
+    div.className = `le ${cls}`;
+    div.innerHTML = `<span class="le-ts">${now}</span>${escHtml(msg)}`;
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    if (ts.logEntries) ts.logEntries.push({ time: now, msg });
+}
+
+function saveResults() {
+    const pad = (s, w) => String(s).padEnd(w);
+    const lines = [];
+    lines.push('LLM Tic-Tac-Toe Battle — Tournament Results');
+    lines.push(`Generated: ${new Date().toLocaleString()}`);
+    lines.push('='.repeat(60));
+    lines.push('');
+    lines.push('TOURNAMENT SUMMARY');
+    lines.push('-'.repeat(60));
+    lines.push(`${pad('X Model:', 24)} ${ts.modelX}`);
+    lines.push(`${pad('O Model:', 24)} ${ts.modelO}`);
+    lines.push(`${pad('Games Played:', 24)} ${ts.gameNum} / ${ts.totalGames}`);
+    lines.push(`${pad('X Wins:', 24)} ${ts.wins.X}`);
+    lines.push(`${pad('O Wins:', 24)} ${ts.wins.O}`);
+    lines.push(`${pad('Draws:', 24)} ${ts.wins.draw}`);
+    lines.push(`${pad('API Errors:', 24)} ${ts.apiErrors}`);
+    lines.push(`${pad('X Format Errors:', 24)} ${ts.fmtErrors.X}`);
+    lines.push(`${pad('O Format Errors:', 24)} ${ts.fmtErrors.O}`);
+    lines.push(`${pad('X Cost:', 24)} ${formatCost(ts.cost.X)}`);
+    lines.push(`${pad('O Cost:', 24)} ${formatCost(ts.cost.O)}`);
+    lines.push(`${pad('Unique Games:', 24)} ${ts.uniqueGames.size}`);
+    lines.push('');
+    lines.push('='.repeat(60));
+    lines.push('GAME LOG');
+    lines.push('='.repeat(60));
+    (ts.logEntries || []).forEach(e => lines.push(`[${e.time}] ${e.msg}`));
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ttt-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function escHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ─────────────────────────── API call ───────────────────────── */
+
+function buildPrompt(board, sym) {
+    const opp = sym === 'X' ? 'O' : 'X';
+    const available = board.map((c,i) => c === null ? i+1 : null).filter(x => x !== null);
+    return `You are playing Tic-Tac-Toe. Your symbol is ${sym}.
+
+Board positions:
+ 1 | 2 | 3
+---+---+---
+ 4 | 5 | 6
+---+---+---
+ 7 | 8 | 9
+
+Current board (${sym}=you, ${opp}=opponent, number=empty):
+${boardText(board)}
+
+Available squares: ${available.join(', ')}
+
+Reply with ONLY your move in this exact format: {N}
+No explanation, no commentary, no other text. Just {N}.`;
+}
+
+async function apiCall(model, prompt) {
+    const TIMEOUT_MS = 5 * 60 * 1000;  // 5 minutes
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    let res;
+    try {
+        res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${ts.apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': window.location.href,
+                'X-Title': 'LLM Tic-Tac-Toe'
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 1024,
+                temperature: ts.temperature
+            }),
+            signal: controller.signal
+        });
+    } catch (e) {
+        if (e.name === 'AbortError') throw new Error('Request timed out after 5 minutes');
+        throw e;
+    } finally {
+        clearTimeout(timer);
+    }
+
+    if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        const err = new Error(`HTTP ${res.status}: ${body}`);
+        err.httpStatus = res.status;
+        throw err;
+    }
+
+    const json = await res.json();
+    const content = json.choices?.[0]?.message?.content ?? '';
+    return { content: content.trim(), usage: json.usage ?? null };
+}
+
+/* ─────────────────────────── move parsing ───────────────────── */
+
+function parseMove(text) {
+    const matches = [...text.matchAll(/\{(\d+)\}/g)];
+
+    if (matches.length === 0)
+        return { ok: false, reason: 'No {N} found in response' };
+
+    if (matches.length > 1)
+        return { ok: false, reason: `Multiple moves found: ${matches.map(m => m[0]).join(', ')}` };
+
+    const n = parseInt(matches[0][1], 10);
+    if (n < 1 || n > 9)
+        return { ok: false, reason: `Square ${n} is out of range (1–9)` };
+
+    return { ok: true, index: n - 1 };   // 0-based index
+}
+
+/* ─────────────────────────── perfect player ─────────────────── */
+
+function togglePerfectPlayer(p) {
+    const checked = document.getElementById(`perfect-${p}`).checked;
+    document.getElementById(`model-section-${p}`).style.display = checked ? 'none' : '';
+}
+
+function minimax(board, isMaximizing, sym, depth) {
+    const result = checkWinner(board);
+    if (result) return result.winner === sym ? 10 - depth : depth - 10;
+    if (isDraw(board)) return 0;
+    const opp = sym === 'X' ? 'O' : 'X';
+    const available = board.map((c, i) => c === null ? i : null).filter(x => x !== null);
+    if (isMaximizing) {
+        let best = -Infinity;
+        for (const idx of available) {
+            board[idx] = sym;
+            best = Math.max(best, minimax(board, false, sym, depth + 1));
+            board[idx] = null;
+        }
+        return best;
+    } else {
+        let best = Infinity;
+        for (const idx of available) {
+            board[idx] = opp;
+            best = Math.min(best, minimax(board, true, sym, depth + 1));
+            board[idx] = null;
+        }
+        return best;
+    }
+}
+
+function getPerfectMove(board, sym) {
+    const available = board.map((c, i) => c === null ? i : null).filter(x => x !== null);
+    let bestScore = -Infinity;
+    let bestIdx = available[0];
+    for (const idx of available) {
+        board[idx] = sym;
+        const score = minimax(board, false, sym, 0);
+        board[idx] = null;
+        if (score > bestScore) {
+            bestScore = score;
+            bestIdx = idx;
+        }
+    }
+    return bestIdx;
+}
+
+/* ─────────────────────────── get one move ───────────────────── */
+
+async function getMove(board, sym) {
+    if (sym === 'X' ? ts.perfectX : ts.perfectO) {
+        addLog(`${sym} (Perfect Algorithm) computing…`, 'le-prompt');
+        await sleep(250);
+        let idx;
+        if (board.every(c => c === null)) {
+            idx = Math.floor(Math.random() * 9);
+            addLog(`${sym} (Perfect Algorithm) plays square ${idx + 1} (random opening)`, 'le-move');
+        } else {
+            idx = getPerfectMove(board, sym);
+            addLog(`${sym} (Perfect Algorithm) plays square ${idx + 1}`, 'le-move');
+        }
+        return idx;
+    }
+
+    const model = sym === 'X' ? ts.modelX : ts.modelO;
+    const prompt = buildPrompt(board, sym);
+
+    while (true) {
+        if (ts.stopped) throw new Error('STOPPED');
+
+        /* — Log prompt — */
+        addLog(`→ Prompt to ${sym} (${model}): ${prompt}`, 'le-prompt');
+
+        /* — API call — */
+        let rawText;
+        while (true) {
+            if (ts.stopped) throw new Error('STOPPED');
+            try {
+                const { content, usage } = await apiCall(model, prompt);
+                rawText = content;
+                if (usage) {
+                    const modelInfo = allModels.find(m => m.id === model);
+                    if (modelInfo?.pricing) {
+                        ts.cost[sym] +=
+                            (usage.prompt_tokens     || 0) * parseFloat(modelInfo.pricing.prompt     || 0) +
+                            (usage.completion_tokens || 0) * parseFloat(modelInfo.pricing.completion || 0);
+                    }
+                }
+                break;
+            } catch (e) {
+                if (e.httpStatus === 401) throw new Error('AUTH_FAILED');
+                ts.apiErrors++;
+                refreshStats();
+                addLog(`API error [${ts.apiErrors}/${ts.maxApiErrors}]: ${e.message}`, 'le-err');
+                if (ts.apiErrors >= ts.maxApiErrors) throw new Error('MAX_API_ERRORS');
+                await sleep(2500);
+            }
+        }
+
+        refreshStats();
+        addLog(`${sym} (${model}) responded: "${rawText}"`, 'le-resp');
+
+        /* — Format check — */
+        const parsed = parseMove(rawText);
+
+        if (!parsed.ok) {
+            ts.fmtErrors[sym]++;
+            refreshStats();
+            addLog(`Format error for ${sym} [total ${ts.fmtErrors.X + ts.fmtErrors.O}/${ts.maxFmtErrors}]: ${parsed.reason}`, 'le-fmterr');
+            if (ts.fmtErrors.X + ts.fmtErrors.O >= ts.maxFmtErrors) throw new Error('MAX_FMT_ERRORS');
+            await sleep(800);
+            continue;
+        }
+
+        /* — Occupied-square check — */
+        if (board[parsed.index] !== null) {
+            ts.fmtErrors[sym]++;
+            refreshStats();
+            addLog(`Format error for ${sym} [total ${ts.fmtErrors.X + ts.fmtErrors.O}/${ts.maxFmtErrors}]: square ${parsed.index+1} is already occupied`, 'le-fmterr');
+            if (ts.fmtErrors.X + ts.fmtErrors.O >= ts.maxFmtErrors) throw new Error('MAX_FMT_ERRORS');
+            await sleep(800);
+            continue;
+        }
+
+        /* — Valid move — */
+        addLog(`${sym} plays square ${parsed.index + 1}`, 'le-move');
+        return parsed.index;
+    }
+}
+
+/* ─────────────────────────── one game ───────────────────────── */
+
+async function playGame(gameNum, firstSym) {
+    const board = Array(9).fill(null);
+    let sym = firstSym;
+    const moveSequence = [];
+
+    addLog(`══ Game ${gameNum} of ${ts.totalGames} — ${sym} goes first ══`, 'le-start');
+    renderBoard(board);
+    setActiveBadge(sym);
+
+    while (true) {
+        if (ts.stopped) throw new Error('STOPPED');
+
+        setStatus(`Game ${gameNum}: ${sym}'s turn`);
+        setThinking(`${sym} thinking`);
+
+        const idx = await getMove(board, sym);
+
+        moveSequence.push(idx);
+        board[idx] = sym;
+        const result = checkWinner(board);
+        const draw = isDraw(board);
+
+        renderBoard(board, result ? result.line : null);
+        setThinking('');
+
+        if (result) {
+            ts.wins[sym]++;
+            ts.uniqueGames.add(`${firstSym}:${moveSequence.join(',')}`);
+            refreshStats();
+            setActiveBadge(null);
+            setStatus(`Game ${gameNum}: ${sym} wins!`);
+            addLog(`${sym} wins Game ${gameNum}!`, 'le-end');
+            await sleep(1600);
+            return sym;
+        }
+
+        if (draw) {
+            ts.wins.draw++;
+            ts.uniqueGames.add(`${firstSym}:${moveSequence.join(',')}`);
+            refreshStats();
+            setActiveBadge(null);
+            setStatus(`Game ${gameNum}: Draw`);
+            addLog(`Game ${gameNum} is a draw.`, 'le-end');
+            await sleep(1600);
+            return 'draw';
+        }
+
+        sym = sym === 'X' ? 'O' : 'X';
+        setActiveBadge(sym);
+        await sleep(200);
+    }
+}
+
+/* ─────────────────────────── tournament ─────────────────────── */
+
+async function startTournament() {
+    const apiKey   = document.getElementById('api-key').value.trim();
+    const modelX   = document.getElementById('model-x').value;
+    const modelO   = document.getElementById('model-o').value;
+    const perfectX    = document.getElementById('perfect-x').checked;
+    const perfectO    = document.getElementById('perfect-o').checked;
+    const _ng = parseInt(document.getElementById('num-games').value, 10);
+    const total  = Math.max(1, isNaN(_ng) ? 5 : _ng);
+    const _ma = parseInt(document.getElementById('max-api-errors').value, 10);
+    const maxApi = Math.max(1, isNaN(_ma) ? 10 : _ma);
+    const _mf = parseInt(document.getElementById('max-format-errors').value, 10);
+    const maxFmt = Math.max(1, isNaN(_mf) ? 10 : _mf);
+    const tempVal = parseFloat(document.getElementById('temperature').value);
+    const temperature = Math.max(0, Math.min(1, isNaN(tempVal) ? 1.0 : tempVal));
+
+    if (!perfectX || !perfectO) {
+        if (!apiKey) { alert('Enter your OpenRouter API key for LLM players.'); return; }
+    }
+    if (!perfectX && !modelX) { alert('Select a model for Player X or enable Perfect Player.'); return; }
+    if (!perfectO && !modelO) { alert('Select a model for Player O or enable Perfect Player.'); return; }
+
+    const labelX = perfectX ? 'Perfect Algorithm' : modelX;
+    const labelO = perfectO ? 'Perfect Algorithm' : modelO;
+
+    ts = {
+        running: true,
+        stopped: false,
+        apiKey,
+        perfectX,
+        perfectO,
+        temperature,
+        modelX: labelX,
+        modelO: labelO,
+        totalGames: total,
+        gameNum: 0,
+        maxApiErrors: maxApi,
+        maxFmtErrors: maxFmt,
+        apiErrors: 0,
+        fmtErrors: { X: 0, O: 0 },
+        wins: { X: 0, O: 0, draw: 0 },
+        cost: { X: 0, O: 0 },
+        uniqueGames: new Set(),
+        logEntries: []
+    };
+
+    document.getElementById('setup-panel').style.display = 'none';
+    document.getElementById('game-panel').style.display  = 'block';
+    document.getElementById('log-container').innerHTML   = '';
+    document.getElementById('final-summary').style.display = 'none';
+    document.getElementById('stop-btn').style.display   = '';
+    document.getElementById('new-btn').style.display    = 'none';
+    document.getElementById('save-btn').style.display   = 'none';
+
+    document.getElementById('pill-x').textContent = `X: ${labelX}`;
+    document.getElementById('pill-o').textContent = `O: ${labelO}`;
+
+    refreshStats();
+    renderBoard(Array(9).fill(null));
+
+    addLog(`Tournament: ${total} games | Max API errors: ${maxApi} | Max format errors: ${maxFmt} | Temperature: ${temperature.toFixed(2)}`, 'le-sys');
+    addLog(`X: ${labelX}`, 'le-sys');
+    addLog(`O: ${labelO}`, 'le-sys');
+
+    try {
+        for (let g = 1; g <= total; g++) {
+            ts.gameNum = g;
+            refreshStats();
+
+            /* Odd game → X first, even game → O first */
+            const first = g % 2 === 1 ? 'X' : 'O';
+            await playGame(g, first);
+
+            if (ts.stopped) break;
+            if (g < total) await sleep(900);
+        }
+
+        addLog('══ Tournament complete ══', 'le-start');
+        addLog(`X wins: ${ts.wins.X}  |  O wins: ${ts.wins.O}  |  Draws: ${ts.wins.draw}`, 'le-end');
+        setStatus('Tournament complete');
+        showSummary();
+
+    } catch (e) {
+        if (e.message === 'STOPPED') {
+            addLog('Tournament stopped by user.', 'le-sys');
+            setStatus('Stopped');
+        } else if (e.message === 'AUTH_FAILED') {
+            addLog('ABORTED — API key rejected (401). Check your OpenRouter API key.', 'le-err');
+            setStatus('ABORTED: invalid API key');
+        } else if (e.message === 'MAX_API_ERRORS') {
+            addLog(`ABORTED — max API errors (${ts.maxApiErrors}) reached.`, 'le-err');
+            setStatus('ABORTED: too many API errors');
+        } else if (e.message === 'MAX_FMT_ERRORS') {
+            addLog(`ABORTED — max format errors (${ts.maxFmtErrors}) reached.`, 'le-err');
+            setStatus('ABORTED: too many format errors');
+        } else {
+            addLog(`Unexpected error: ${e.message}`, 'le-err');
+            setStatus('Error');
+        }
+    }
+
+    ts.running = false;
+    setActiveBadge(null);
+    setThinking('');
+    document.getElementById('stop-btn').style.display = 'none';
+    document.getElementById('new-btn').style.display  = '';
+    document.getElementById('save-btn').style.display = '';
+}
+
+function showSummary() {
+    const s = document.getElementById('final-summary');
+    document.getElementById('sum-x').textContent = ts.wins.X;
+    document.getElementById('sum-o').textContent = ts.wins.O;
+    document.getElementById('sum-d').textContent = ts.wins.draw;
+    document.getElementById('sum-x-model').textContent = ts.modelX;
+    document.getElementById('sum-o-model').textContent = ts.modelO;
+    document.getElementById('sum-unique').textContent = ts.uniqueGames.size;
+    s.style.display = 'block';
+}
+
+function stopTournament() {
+    ts.stopped = true;
+    addLog('Stop requested…', 'le-sys');
+    document.getElementById('stop-btn').disabled = true;
+}
+
+function backToSetup() {
+    document.getElementById('game-panel').style.display  = 'none';
+    document.getElementById('setup-panel').style.display = 'block';
+    document.getElementById('stop-btn').disabled = false;
+    document.getElementById('save-btn').style.display = 'none';
+}
+
+/* init */
+renderBoard(Array(9).fill(null));
+</script>
+</body>
+</html>
