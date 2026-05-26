@@ -4,11 +4,11 @@ Docs 05-25-26 V1 (For questions or comments:  Stephen Witty switty@level500.com)
 ### Project Overview:
 This project is a revisit of an older project. The project provides a test harness for LLMs to study their ability to play Tic Tac Toe. The test harness provides a way to play a LLM against another LLM, the same LLM head to head, or a LLM against a perfect player. Win, loss, and draw stats are kept and can be saved. The player who goes first alternates between games. When a perfect player is selected and has the first move of the game, a random square is selected. This adds more game uniqueness across multiple games. The program uses Open Router to make LLM API requests across models the same.
 
-<img src="Pics/Game Board.png" width="400">
+<img src="Pics/Game Board.png" width="500">
 
 ### Reports / Documentation:
 - A presentation that covers the project can be found below:
-- [Presentation Link](https://github.com/switty42/AI_Tic_Tac_Toe_V2/blob/main/Presentations/AI_Tic_Tac_Toe_V2.pdf)
+- [Presentation Link](https://github.com/switty42/AI_Tic_Tac_Toe_V2/blob/main/Presentations/AI_Tic_Tac_Toe_V2_052426.pdf)
 - Example run recorded:
 - [Video](https://youtu.be/yAPSHvwvDJE)
 ### Usage:
